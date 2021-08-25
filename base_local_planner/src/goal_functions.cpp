@@ -110,12 +110,17 @@ namespace base_local_planner {
     const geometry_msgs::PoseStamped& plan_pose = global_plan[0];
     try {
       // get plan_to_global_transform from plan frame to global_frame
-      geometry_msgs::TransformStamped plan_to_global_transform = tf.lookupTransform(global_frame, ros::Time(),
-          plan_pose.header.frame_id, plan_pose.header.stamp, plan_pose.header.frame_id, ros::Duration(0.5));
+      geometry_msgs::TransformStamped plan_to_global_transform = tf.lookupTransform(global_frame, plan_pose.header.frame_id, ros::Time(0));
 
       //let's get the pose of the robot in the frame of the plan
       geometry_msgs::PoseStamped robot_pose;
-      tf.transform(global_pose, robot_pose, plan_pose.header.frame_id);
+      if(global_pose.header.frame_id == global_frame) {
+        tf2::doTransform(global_pose, robot_pose, plan_to_global_transform);
+      }
+      else {
+        // Calculate required transform if global_pose is in different frame than global_frame
+        tf2::doTransform(global_pose, robot_pose, tf.lookupTransform(global_pose.header.frame_id, plan_pose.header.frame_id, ros::Time(0)));
+      }        
 
       //we'll discard points on the plan that are outside the local costmap
       double dist_threshold = std::max(costmap.getSizeInCellsX() * costmap.getResolution() / 2.0,
