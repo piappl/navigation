@@ -114,13 +114,7 @@ namespace base_local_planner {
 
       //let's get the pose of the robot in the frame of the plan
       geometry_msgs::PoseStamped robot_pose;
-      if(global_pose.header.frame_id == global_frame) {
-        tf2::doTransform(global_pose, robot_pose, plan_to_global_transform);
-      }
-      else {
-        // Calculate required transform if global_pose is in different frame than global_frame
-        tf2::doTransform(global_pose, robot_pose, tf.lookupTransform(global_pose.header.frame_id, plan_pose.header.frame_id, ros::Time(0)));
-      }        
+      tf2::doTransform(global_pose, robot_pose, tf.lookupTransform(plan_pose.header.frame_id, global_pose.header.frame_id, ros::Time(0)));
 
       //we'll discard points on the plan that are outside the local costmap
       double dist_threshold = std::max(costmap.getSizeInCellsX() * costmap.getResolution() / 2.0,
@@ -241,9 +235,9 @@ namespace base_local_planner {
     return false;
   }
 
-  bool stopped(const nav_msgs::Odometry& base_odom, 
+  bool stopped(const nav_msgs::Odometry& base_odom,
       const double& rot_stopped_velocity, const double& trans_stopped_velocity){
-    return fabs(base_odom.twist.twist.angular.z) <= rot_stopped_velocity 
+    return fabs(base_odom.twist.twist.angular.z) <= rot_stopped_velocity
       && fabs(base_odom.twist.twist.linear.x) <= trans_stopped_velocity
       && fabs(base_odom.twist.twist.linear.y) <= trans_stopped_velocity;
   }
